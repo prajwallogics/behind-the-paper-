@@ -1,0 +1,1303 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retro Paper Party — Multiplayer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Special+Elite&display=swap');
+
+:root {
+  --ink:#30271f;
+  --paper:#fffdf5;
+  --red:#a44437;
+  --green:#526d53;
+  --wood:#b89a75;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;color:var(--ink);
+  font-family:'Caveat',cursive;font-size:21px;
+  background-color:var(--wood);
+  background-image:
+    repeating-linear-gradient(90deg,transparent 0 90px,#6d4c3210 91px 93px),
+    repeating-linear-gradient(0deg,#ffffff08 0 3px,transparent 4px 8px);
+}
+button,input,select{font:inherit}
+button{
+  cursor:pointer;padding:9px 18px;border:2px solid var(--ink);
+  background:var(--paper);color:var(--ink);border-radius:3px;
+  box-shadow:3px 4px 0 #30271f35;margin:3px;
+}
+button:hover{transform:translateY(-2px)}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.primary{background:var(--ink);color:var(--paper)}
+.danger{color:var(--red);border-color:var(--red)}
+header{text-align:center;padding:24px 12px 12px;color:#fff8e9}
+header h1{margin:0;font-size:clamp(38px,7vw,66px);line-height:1}
+header p{margin:8px 0}
+main{width:min(950px,94%);margin:12px auto 35px}
+.paper{
+  background-color:var(--paper);
+  background-image:repeating-linear-gradient(transparent 0 31px,#8d9e9a22 32px 33px);
+  border:1px solid #d5c8aa;box-shadow:5px 7px 0 #34251b35;
+  padding:clamp(18px,4vw,35px);position:relative;
+}
+.paper:before{
+  content:"";position:absolute;left:25px;top:0;height:100%;
+  border-left:1px solid #c77b6a55;pointer-events:none
+}
+.screen{display:none}
+.screen.active{display:block}
+h2{text-align:center;font-size:38px;margin:0 0 8px}
+h3{font-size:29px}
+.subtitle{text-align:center;color:#6b5b4b;margin:0 0 22px}
+.label{display:block;font-weight:bold;font-size:24px;margin:13px 0 5px}
+input,select{
+  width:100%;max-width:100%;padding:9px;border:2px solid #786650;
+  background:#fffef9;color:var(--ink);border-radius:3px
+}
+textarea{
+  width:100%;max-width:100%;min-height:130px;padding:9px;border:2px solid #786650;
+  background:#fffef9;color:var(--ink);border-radius:3px
+}
+.settings,.games{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px
+}
+.games{margin-top:22px}
+.game-card{
+  text-align:center;background:#fffef8;border:2px solid #8c765b;
+  padding:20px 14px;transform:rotate(-.5deg)
+}
+.game-card:nth-child(even){transform:rotate(.5deg)}
+.game-card h3{margin:0 0 8px}
+.game-card p{min-height:48px}
+.topline{
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;
+  border-bottom:2px dashed #a99a80;padding-bottom:12px;margin-bottom:20px
+}
+.center{text-align:center}
+.actions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:20px}
+.note{background:#f5edcf;border-left:4px solid #b49b5b;padding:12px 15px;margin:18px 0}
+.player-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:13px;margin:20px 0}
+.sheet{
+  background:#fffefb;border:2px solid #9b8a70;min-height:130px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:13px;text-align:center;transform:rotate(-.8deg)
+}
+.sheet:nth-child(even){transform:rotate(.8deg)}
+.player-name{font-size:25px;font-weight:bold}
+.card-value{font-family:'Special Elite',monospace;font-size:28px;margin:8px 0}
+.role{font-family:'Special Elite',monospace;font-size:clamp(28px,5vw,42px);margin:18px 0}
+.big-sheet{
+  border:2px solid #9b8a70;background:#fffefb;max-width:350px;
+  min-height:200px;margin:18px auto;padding:22px;display:flex;
+  flex-direction:column;justify-content:center;align-items:center;text-align:center
+}
+.score-table{width:100%;border-collapse:collapse;background:#fffef8;margin-top:18px}
+.score-table th,.score-table td{padding:9px;border-bottom:1px solid #c6b89e;text-align:left}
+.winner{color:var(--green);font-weight:bold}
+.muted{color:#796b59}
+footer{text-align:center;padding:0 12px 22px;color:#fff8e9}
+@media(max-width:500px){.paper{padding:20px 14px 20px 25px}button{padding:8px 12px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>✦ The Paper Party ✦</h1>
+  <p>Classic paper games • Friends • Friendly competition</p>
+</header>
+
+<main>
+<section id="home" class="screen active">
+<div class="paper">
+  <h2>Set Up Your Game</h2>
+  <p class="subtitle">Choose your players, rounds and game.</p>
+
+  <div class="settings">
+    <div>
+      <label class="label" for="playerCount">Number of players</label>
+      <select id="playerCount">
+        <option>3</option><option selected>4</option><option>5</option>
+        <option>6</option><option>7</option><option>8</option>
+        <option>9</option><option>10</option>
+      </select>
+    </div>
+    <div>
+      <label class="label" for="roundCount">Number of rounds</label>
+      <select id="roundCount">
+        <option value="1">1 round</option>
+        <option value="3" selected>3 rounds</option>
+        <option value="5">5 rounds</option>
+        <option value="7">7 rounds</option>
+        <option value="10">10 rounds</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="games">
+    <div class="game-card">
+      <h3>SET</h3>
+      <p>Collect four matching sheets. Pass one sheet clockwise each turn; the first players to claim a SET score.</p>
+      <button class="primary" onclick="startGame('SET')">Play SET</button>
+    </div>
+    <div class="game-card">
+      <h3>King, Queen, Minister</h3>
+      <p>Everyone sees their own role privately. The King is revealed, then Police tries to find the Thief.</p>
+      <button class="primary" onclick="startGame('KQM')">Play KQM</button>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Single-device mode:</b> Play on one screen and pass the device to the named player when prompted.
+  </div>
+
+  <div class="note">
+    <b>Local multiplayer:</b> Open this same file in separate tabs in the same browser. Create a room, share its code, and have each player join from another tab. No server or internet connection is needed.
+    <label class="label" for="mpName">Your name</label>
+    <input id="mpName" maxlength="30" placeholder="Enter your name">
+    <div class="actions">
+      <button class="primary" onclick="createRoom()">Create Local Room</button>
+    </div>
+    <label class="label" for="joinCode">Room code</label>
+    <input id="joinCode" maxlength="6" placeholder="Enter a room code">
+    <div class="actions">
+      <button onclick="joinRoom()">Join Local Room</button>
+    </div>
+    <p id="roomError" class="muted" aria-live="polite"></p>
+  </div>
+
+  <div class="note">
+    <b>Open local rooms</b>
+    <p class="muted">Rooms created in this browser appear here with the creator’s name and room code so other tabs can join.</p>
+    <div id="openRooms" class="player-grid" aria-live="polite"></div>
+  </div>
+</div>
+</section>
+
+<section id="lobby" class="screen">
+<div class="paper">
+  <h2>Local Room</h2>
+  <p class="subtitle">Room code: <b id="roomCodeDisplay"></b></p>
+  <p class="note">Share this code with players opening the same HTML file in another tab of this browser.</p>
+  <h3 class="center">Players</h3>
+  <div id="roomPlayers" class="player-grid"></div>
+  <div id="hostControls">
+    <label class="label" for="roomRounds">Number of rounds</label>
+    <select id="roomRounds">
+      <option value="1">1 round</option>
+      <option value="3" selected>3 rounds</option>
+      <option value="5">5 rounds</option>
+      <option value="7">7 rounds</option>
+      <option value="10">10 rounds</option>
+    </select>
+    <div class="actions">
+      <button class="primary" onclick="startRoomGame('SET')">Start SET</button>
+      <button class="primary" onclick="startRoomGame('KQM')">Start KQM</button>
+    </div>
+    <p class="muted center">SET requires 5–8 players. KQM requires at least 4 players. KQM awards King 1000, Queen 800, Police 500 for a correct guess, or Thief 500 if missed.</p>
+  </div>
+  <p id="lobbyWaiting" class="note center"></p>
+  <div class="actions">
+    <button class="danger" onclick="leaveRoom()">Leave Room</button>
+  </div>
+</div>
+</section>
+
+<section id="game" class="screen">
+<div class="paper">
+  <div class="topline">
+    <span id="gameName">Game</span>
+    <span id="roundLabel">Round 1 of 3</span>
+  </div>
+  <h2 id="gameTitle">Your Turn</h2>
+  <p class="subtitle" id="gameSubtitle"></p>
+
+  <div id="gameContent"></div>
+  <div id="gameMessage" class="note" aria-live="polite"></div>
+  <div class="actions" id="gameActions"></div>
+</div>
+</section>
+
+<section id="summary" class="screen">
+<div class="paper">
+  <h2 id="summaryTitle">Round Complete!</h2>
+  <p class="subtitle" id="summarySubtitle"></p>
+  <div id="summaryContent"></div>
+  <div class="actions">
+    <button class="primary" id="continueButton" onclick="continueGame()">Start Next Round</button>
+    <button class="danger" onclick="showHome()">End Game</button>
+  </div>
+</div>
+</section>
+
+<section id="scores" class="screen">
+<div class="paper">
+  <h2>✦ Final Scoreboard ✦</h2>
+  <p class="subtitle">All rounds completed!</p>
+  <div id="winnerDisplay" class="center"></div>
+  <table class="score-table">
+    <thead><tr><th>Rank</th><th>Player</th><th>Points</th></tr></thead>
+    <tbody id="scoreRows"></tbody>
+  </table>
+  <div class="actions">
+    <button class="primary" onclick="showHome()">Play Again</button>
+  </div>
+</div>
+</section>
+</main>
+<footer>Made for friends, laughter and a little friendly competition ✦</footer>
+
+<script>
+const state = {
+  game: '',
+  gameId: '',
+  players: [],
+  scores: {},
+  round: 1,
+  rounds: 3,
+  turn: 0,
+  roles: [],
+  rolePoints: {},
+  roleReady: [],
+  kqmStage: '',
+  kingId: null,
+  guessId: null,
+  roundRoles: {},
+  roundPoints: {},
+  setStage: '',
+  setTopic: '',
+  setNames: [],
+  setHands: {},
+  setReviewed: [],
+  setPassChoices: {},
+  setEligible: [],
+  setClaims: [],
+  setClaimDecisions: [],
+  roundFinished: false,
+  roundLog: []
+};
+
+const $ = id => document.getElementById(id);
+const ROOM_KEY = 'paper-party-local-rooms-v1';
+const ROOM_CHANNEL = 'paper-party-local-sync-v1';
+const PRIVATE_ROLE_CHANNEL = 'paper-party-role-v1';
+const SET_CATEGORY_POINTS = [5000, 4000, 3000, 2000, 1500, 1000, 500, 250];
+const roomChannel = new BroadcastChannel(ROOM_CHANNEL);
+let roomId = null;
+let playerId = null;
+let room = null;
+let privateRoleChannel = null;
+
+function readRooms() {
+  const raw = localStorage.getItem(ROOM_KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+
+function writeRooms(rooms) {
+  localStorage.setItem(ROOM_KEY, JSON.stringify(rooms));
+}
+
+function playerIdForTab() {
+  let id = sessionStorage.getItem('paperPartyPlayerId');
+  if (!id) {
+    id = `p_${Math.random().toString(36).slice(2, 11)}`;
+    sessionStorage.setItem('paperPartyPlayerId', id);
+  }
+  return id;
+}
+
+function announceRoom() {
+  roomChannel.postMessage({roomId});
+}
+
+function newGameId() {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function connectPrivateRoleChannel() {
+  if (privateRoleChannel) privateRoleChannel.close();
+  privateRoleChannel = null;
+  if (!roomId || !playerId) return;
+  privateRoleChannel = new BroadcastChannel(`${PRIVATE_ROLE_CHANNEL}-${roomId}-${playerId}`);
+  privateRoleChannel.onmessage = event => {
+    const data = event.data;
+    if (data?.roomId !== roomId || typeof data.role !== 'string' || typeof data.gameId !== 'string') return;
+    sessionStorage.setItem(roomRoleKey(data.round, data.gameId), data.role);
+    if (room?.status === 'playing' && room.game?.game === 'KQM' &&
+        room.game.kqmStage === 'reveal' && room.game.gameId === data.gameId) {
+      renderRoomGame();
+    }
+  };
+}
+
+function roomRolesKey(round = state.round, gameId = state.gameId) {
+  return `paperPartyRoles_${roomId}_${gameId}_${round}`;
+}
+
+function saveRoomGame() {
+  if (!roomId) return;
+  const rooms = readRooms();
+  const current = rooms[roomId];
+  if (!current) return;
+  current.game = structuredClone(state);
+  delete current.game.roles;
+  current.status = 'playing';
+  writeRooms(rooms);
+  room = current;
+  announceRoom();
+}
+
+function mutateRoomGame(mutator) {
+  if (!roomId) return;
+  const rooms = readRooms();
+  const current = rooms[roomId];
+  if (!current?.game) return;
+  mutator(current.game, current);
+  rooms[roomId] = current;
+  writeRooms(rooms);
+  room = current;
+  Object.assign(state, structuredClone(current.game));
+  announceRoom();
+}
+
+function activeRoom() {
+  if (!roomId) return null;
+  return readRooms()[roomId] || null;
+}
+
+function playerNameForTab() {
+  return room?.players.find(player => player.id === playerId)?.name || '';
+}
+
+function roomRoleKey(round = state.round, gameId = state.gameId) {
+  return `paperPartyRole_${roomId}_${gameId}_${round}`;
+}
+
+function roomRole() {
+  return roomId ? sessionStorage.getItem(roomRoleKey()) : state.roles[state.turn];
+}
+
+function isRoomHost() {
+  return Boolean(room && room.host === playerId);
+}
+
+function isCurrentRoomPlayer() {
+  return !roomId || state.players[state.turn] === playerNameForTab();
+}
+
+function renderRoomLobby() {
+  room = activeRoom();
+  if (!room) {
+    roomId = null;
+    screen('home');
+    return;
+  }
+  $('roomCodeDisplay').textContent = room.id;
+  $('roomPlayers').innerHTML = room.players.map(player =>
+    `<div class="sheet"><span class="player-name">${safe(player.name)}</span>${player.id === room.host ? '<small>Host</small>' : ''}</div>`
+  ).join('');
+  if (room.status === 'playing') {
+    $('hostControls').hidden = true;
+    $('lobbyWaiting').innerHTML = 'Game in progress. <button onclick="renderRoomGame()">Return to game</button>';
+  } else {
+    $('hostControls').hidden = !isRoomHost();
+    $('lobbyWaiting').textContent = isRoomHost()
+      ? 'Choose a game when everyone has joined.'
+      : 'Waiting for the host to start a game.';
+  }
+  screen('lobby');
+}
+
+function renderOpenRooms() {
+  const container = $('openRooms');
+  if (!container) return;
+  try {
+    const rooms = Object.values(readRooms())
+      .filter(candidate => candidate.status === 'lobby' && candidate.players.length < 10)
+      .sort((a, b) => a.id.localeCompare(b.id));
+    if (!rooms.length) {
+      container.innerHTML = '<p class="muted center">No open rooms yet. Create one to get started.</p>';
+      return;
+    }
+    container.innerHTML = rooms.map(candidate => {
+      const creator = candidate.players.find(player => player.id === candidate.host);
+      return `<div class="sheet">
+        <span class="player-name">${safe(creator?.name || 'Host')}'s room</span>
+        <small>Room code: <b>${safe(candidate.id)}</b></small>
+        <small>${candidate.players.length}/10 players</small>
+        <button onclick="joinListedRoom('${safe(candidate.id)}')">Join Room</button>
+      </div>`;
+    }).join('');
+  } catch (error) {
+    container.textContent = `Could not load open rooms: ${error.message}`;
+  }
+}
+
+function joinListedRoom(id) {
+  $('joinCode').value = id;
+  joinRoom();
+}
+
+function renderRoomGame() {
+  room = activeRoom();
+  if (!room?.game) {
+    renderRoomLobby();
+    return;
+  }
+  Object.assign(state, structuredClone(room.game));
+  state.roles = [];
+  if (state.roundFinished) {
+    finishRound();
+  } else {
+    if (state.game === 'SET') {
+      renderRoomSet();
+    } else if (state.kqmStage === 'guess') {
+      renderKqmGuess();
+    } else {
+      renderRoleTurn();
+    }
+    screen('game');
+  }
+}
+
+function screen(id) {
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function shuffle(items) {
+  const arr = [...items];
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function safe(text) {
+  return String(text).replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+function createRoom() {
+  const name = $('mpName').value.trim();
+  if (!name) {
+    $('roomError').textContent = 'Enter your name before creating a room.';
+    return;
+  }
+  try {
+    const rooms = readRooms();
+    let id;
+    do {
+      id = Math.random().toString(36).slice(2, 8).toUpperCase();
+    } while (rooms[id]);
+    playerId = playerIdForTab();
+    roomId = id;
+    room = {
+      id,
+      host: playerId,
+      status: 'lobby',
+      players: [{id: playerId, name}],
+      game: null
+    };
+    rooms[id] = room;
+    writeRooms(rooms);
+    sessionStorage.setItem('paperPartyRoomId', id);
+    connectPrivateRoleChannel();
+    $('roomError').textContent = '';
+    announceRoom();
+    renderRoomLobby();
+  } catch (error) {
+    $('roomError').textContent = `Could not create a local room: ${error.message}`;
+  }
+}
+
+function joinRoom() {
+  const name = $('mpName').value.trim();
+  const id = $('joinCode').value.trim().toUpperCase();
+  if (!name) {
+    $('roomError').textContent = 'Enter your name before joining a room.';
+    return;
+  }
+  if (!id) {
+    $('roomError').textContent = 'Enter a room code.';
+    return;
+  }
+  try {
+    const rooms = readRooms();
+    const target = rooms[id];
+    if (!target) {
+      $('roomError').textContent = 'Room not found. Check the code.';
+      return;
+    }
+    if (target.status !== 'lobby') {
+      $('roomError').textContent = 'This room has already started a game.';
+      return;
+    }
+    if (target.players.length >= 10 && !target.players.some(player => player.id === playerIdForTab())) {
+      $('roomError').textContent = 'This room is full (10 players maximum).';
+      return;
+    }
+    playerId = playerIdForTab();
+    const existing = target.players.find(player => player.id === playerId);
+    if (!existing && target.players.some(player => player.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      $('roomError').textContent = 'That name is already in this room. Choose a different name.';
+      return;
+    }
+    if (existing) existing.name = name;
+    else target.players.push({id: playerId, name});
+    roomId = id;
+    room = target;
+    writeRooms(rooms);
+    sessionStorage.setItem('paperPartyRoomId', id);
+    connectPrivateRoleChannel();
+    $('roomError').textContent = '';
+    announceRoom();
+    renderRoomLobby();
+  } catch (error) {
+    $('roomError').textContent = `Could not join the local room: ${error.message}`;
+  }
+}
+
+function leaveRoom() {
+  if (!roomId) {
+    screen('home');
+    return;
+  }
+  try {
+    const rooms = readRooms();
+    const current = rooms[roomId];
+    if (current?.status === 'playing') {
+      $('lobbyWaiting').textContent = 'This game is in progress. Finish the game before leaving the room.';
+      return;
+    }
+    if (current && current.status === 'lobby') {
+      current.players = current.players.filter(player => player.id !== playerId);
+      if (current.host === playerId && current.players.length) current.host = current.players[0].id;
+      if (!current.players.length) delete rooms[roomId];
+      else rooms[roomId] = current;
+      writeRooms(rooms);
+    }
+    roomId = null;
+    room = null;
+    if (privateRoleChannel) privateRoleChannel.close();
+    privateRoleChannel = null;
+    sessionStorage.removeItem('paperPartyRoomId');
+    announceRoom();
+    renderOpenRooms();
+    screen('home');
+  } catch (error) {
+    $('roomError').textContent = `Could not leave the local room: ${error.message}`;
+  }
+}
+
+function startRoomGame(game) {
+  room = activeRoom();
+  if (!isRoomHost()) return;
+  const minimum = game === 'SET' ? 5 : 4;
+  if (room.players.length < minimum) {
+    $('lobbyWaiting').textContent = `${game} requires at least ${minimum} players.`;
+    return;
+  }
+  if(game==='SET' && room.players.length>8) {
+    $('lobbyWaiting').textContent='SET supports 5 to 8 players.';
+    return;
+  }
+  state.players = room.players.map(player => player.name);
+  state.scores = Object.fromEntries(state.players.map(name => [name, 0]));
+  state.game = game;
+  state.gameId = newGameId();
+  state.round = 1;
+  state.rounds = Number($('roomRounds').value);
+  state.roundLog = [];
+  state.setNames = [];
+  prepareRound();
+  saveRoomGame();
+  screen('game');
+}
+
+function startGame(game) {
+  const count = Number($('playerCount').value);
+  if(game==='SET' && (count<5 || count>8)) {
+    $('roomError').textContent='SET requires 5–8 players. Choose a valid player count.';
+    return;
+  }
+  state.players = Array.from({length:count},(_,i)=>`Player ${i+1}`);
+  state.scores = Object.fromEntries(state.players.map(p=>[p,0]));
+  state.game = game;
+  state.gameId = newGameId();
+  state.round = 1;
+  state.rounds = Number($('roundCount').value);
+  state.roundLog = [];
+  state.setNames = [];
+  prepareRound();
+  screen('game');
+}
+
+function prepareRound() {
+  state.turn = state.game === 'SET' ? (state.round - 1) % state.players.length : 0;
+  state.roundFinished = false;
+  $('gameName').textContent = state.game==='SET'?'SET':'King, Queen, Minister';
+  $('roundLabel').textContent = `Round ${state.round} of ${state.rounds}`;
+  $('gameActions').innerHTML = '';
+  $('gameMessage').textContent = '';
+  if(state.game==='SET') prepareSet();
+  else prepareKQM();
+}
+
+function button(label, action, primary=false) {
+  const b=document.createElement('button');
+  b.textContent=label;
+  if(primary)b.className='primary';
+  b.onclick=action;
+  $('gameActions').appendChild(b);
+  return b;
+}
+
+/* SET: pass one sheet clockwise and claim four matching sheets. */
+function setPlayers() {
+  return roomId
+    ? room.players.map(player=>({id:player.id,name:player.name}))
+    : state.players.map((name,index)=>({id:`local_${index}`,name}));
+}
+
+function prepareSet() {
+  state.setTopic='';
+  state.setNames=[];
+  state.setHands={};
+  state.setReviewed=[];
+  state.setPassChoices={};
+  state.setEligible=[];
+  state.setClaims=[];
+  state.setClaimDecisions=[];
+  state.setStage='topic';
+  renderSetTopic();
+}
+
+function renderSetTopic() {
+  const canEdit=!roomId || isRoomHost();
+  $('gameTitle').textContent='Choose a SET topic';
+  $('gameSubtitle').textContent=`Enter a topic and exactly ${state.players.length} different names or items, one per line.`;
+  $('gameContent').innerHTML=canEdit
+    ? `<label class="label" for="setTopicInput">Topic</label><input id="setTopicInput" placeholder="Animals, fruits, countries…">
+       <label class="label" for="setNamesInput">Names or items (one per line)</label><textarea id="setNamesInput" placeholder="Apple&#10;Banana&#10;Cherry&#10;Date&#10;..."></textarea>`
+    : '<p class="note center">Waiting for the host to choose a topic and enter the names.</p>';
+  $('gameMessage').textContent=roomId?'The host will deal four private sheets to each player.':'Enter the items for this round, then pass the device privately to review sheets.';
+  $('gameActions').innerHTML='';
+  if(canEdit)button('Create and deal sheets',dealSetRound,true);
+  button(roomId?'Room Status':'Leave Game',roomId?renderRoomLobby:showHome);
+}
+
+function renderRoomSet() {
+  if(state.setStage==='topic')renderSetTopic();
+  else if(state.setStage==='review')renderSetReview();
+  else if(state.setStage==='passing')renderSetPassing();
+  else if(state.setStage==='claim')renderSetClaim();
+  else renderSetTopic();
+}
+
+function dealSetRound() {
+  if(roomId && !isRoomHost())return;
+  const topic=($('setTopicInput')?.value||'').trim();
+  const names=($('setNamesInput')?.value||'').split(/\r?\n/).map(name=>name.trim()).filter(Boolean);
+  if(!topic) {
+    $('gameMessage').textContent='Enter a topic before dealing the sheets.';
+    return;
+  }
+  if(names.length!==state.players.length) {
+    $('gameMessage').textContent=`Enter exactly ${state.players.length} names or items, one per line.`;
+    return;
+  }
+  if(new Set(names.map(name=>name.toLocaleLowerCase())).size!==names.length) {
+    $('gameMessage').textContent='Each name or item must be different.';
+    return;
+  }
+  beginSetRound(topic,names);
+  if(roomId)saveRoomGame();
+  renderSetReview();
+}
+
+function beginSetRound(topic,names) {
+  const ordered=shuffle(names);
+  const players=shuffle(setPlayers());
+  const offsets=shuffle(Array.from({length:players.length},(_,index)=>index)).slice(0,4);
+  state.setTopic=topic;
+  state.setNames=[...names];
+  state.setHands=Object.fromEntries(setPlayers().map(player=>[player.id,[]]));
+  offsets.forEach(offset=>players.forEach((player,index)=>{
+    state.setHands[player.id].push(ordered[(index+offset)%ordered.length]);
+  }));
+  setPlayers().forEach(player=>state.setHands[player.id]=shuffle(state.setHands[player.id]));
+  state.setStage='review';
+  state.setReviewed=[];
+  state.setPassChoices={};
+  state.setEligible=[];
+  state.setClaims=[];
+  state.setClaimDecisions=[];
+}
+
+function matchingSet(hand) {
+  return hand?.length===4 && hand.every(item=>item.toLocaleLowerCase()===hand[0].toLocaleLowerCase());
+}
+
+function currentSetPlayer(stageList) {
+  if(roomId)return setPlayers().find(player=>player.id===playerId);
+  return setPlayers().find(player=>!stageList.includes(player.id));
+}
+
+function renderSetReview() {
+  const players=setPlayers();
+  const player=roomId?players.find(item=>item.id===playerId):currentSetPlayer(state.setReviewed);
+  if(!player)return advanceSetAfterReview();
+  const alreadyReviewed=state.setReviewed.includes(player.id);
+  $('gameTitle').textContent=alreadyReviewed?'Sheets hidden':'Review your sheets';
+  $('gameSubtitle').textContent=roomId
+    ? 'Only you can see your sheets in this tab. Memorize them, then hide them.'
+    : `Pass the device to ${player.name}. Other players should look away while they review.`;
+  const hand=state.setHands[player.id]||[];
+  $('gameContent').innerHTML=alreadyReviewed
+    ? `<p class="note center">You have hidden your sheets. Waiting for the other players.</p>`
+    : `<div class="player-grid">${hand.map((item,index)=>`<div class="sheet"><small>Sheet ${index+1}</small><span class="card-value">${safe(item)}</span></div>`).join('')}</div>`;
+  $('gameMessage').textContent=`${state.setReviewed.length} of ${players.length} players have hidden their sheets.`;
+  $('gameActions').innerHTML='';
+  if(!alreadyReviewed)button('Hide sheets and continue',markSetReviewed,true);
+  button(roomId?'Room Status':'Leave Game',roomId?renderRoomLobby:showHome);
+  screen('game');
+}
+
+function markSetReviewed() {
+  if(state.setStage!=='review')return;
+  const player=roomId?setPlayers().find(item=>item.id===playerId):currentSetPlayer(state.setReviewed);
+  if(!player || state.setReviewed.includes(player.id))return;
+  if(roomId) {
+    mutateRoomGame(game=>{
+      if(game.game!=='SET'||game.setStage!=='review'||game.setReviewed.includes(playerId))return;
+      game.setReviewed.push(playerId);
+      if(game.setReviewed.length===room.players.length)advanceSetAfterReview(game);
+    });
+    room=activeRoom();
+  } else {
+    state.setReviewed.push(player.id);
+    if(state.setReviewed.length===setPlayers().length)advanceSetAfterReview();
+  }
+  renderRoomSet();
+}
+
+function advanceSetAfterReview(game=state) {
+  const eligible=setPlayers().filter(player=>matchingSet(game.setHands[player.id])).map(player=>player.id);
+  game.setEligible=eligible;
+  if(eligible.length) {
+    game.setStage='claim';
+    game.setClaims=[];
+    game.setClaimDecisions=[];
+  } else {
+    game.setStage='passing';
+    game.setPassChoices={};
+  }
+}
+
+function renderSetPassing() {
+  const players=setPlayers();
+  const player=roomId?players.find(item=>item.id===playerId):currentSetPlayer(Object.keys(state.setPassChoices));
+  if(!player)return;
+  const hand=state.setHands[player.id]||[];
+  const alreadyPassed=state.setPassChoices[player.id]!==undefined;
+  $('gameTitle').textContent=alreadyPassed?'Sheet passed':'Pass one sheet';
+  $('gameSubtitle').textContent=roomId
+    ? 'Choose one sheet to pass clockwise. The selected sheet stays hidden.'
+    : `Pass the device to ${player.name}. Choose one sheet to pass clockwise.`;
+  $('gameContent').innerHTML=alreadyPassed
+    ? '<p class="note center">Your choice is locked. Waiting for all players to pass.</p>'
+    : `<div class="player-grid">${hand.map((item,index)=>`<button class="sheet" onclick="chooseSetSheet(${index})"><small>Sheet ${index+1}</small><span class="card-value">${safe(item)}</span></button>`).join('')}</div>`;
+  $('gameMessage').textContent=`${Object.keys(state.setPassChoices).length} of ${players.length} players have chosen a sheet.`;
+  $('gameActions').innerHTML='';
+  button(roomId?'Room Status':'Leave Game',roomId?renderRoomLobby:showHome);
+  screen('game');
+}
+
+function chooseSetSheet(index) {
+  if(state.setStage!=='passing')return;
+  const players=setPlayers();
+  const player=roomId?players.find(item=>item.id===playerId):currentSetPlayer(Object.keys(state.setPassChoices));
+  if(!player || state.setPassChoices[player.id]!==undefined || !Number.isInteger(index))return;
+  if(index<0 || index>=(state.setHands[player.id]||[]).length)return;
+  if(roomId) {
+    mutateRoomGame(game=>{
+      if(game.game!=='SET'||game.setStage!=='passing'||game.setPassChoices[playerId]!==undefined)return;
+      game.setPassChoices[playerId]=index;
+      if(Object.keys(game.setPassChoices).length===room.players.length)resolveSetPasses(game);
+    });
+    room=activeRoom();
+  } else {
+    state.setPassChoices[player.id]=index;
+    if(Object.keys(state.setPassChoices).length===players.length)resolveSetPasses();
+  }
+  renderRoomSet();
+}
+
+function resolveSetPasses(game=state) {
+  const players=setPlayers(),next={};
+  players.forEach((player,index)=>{
+    const previous=players[(index-1+players.length)%players.length];
+    const chosen=game.setPassChoices[previous.id];
+    next[player.id]=game.setHands[player.id].filter((_,sheetIndex)=>sheetIndex!==chosen);
+    next[player.id].push(game.setHands[previous.id][chosen]);
+  });
+  game.setHands=next;
+  game.setPassChoices={};
+  game.setEligible=players.filter(player=>matchingSet(game.setHands[player.id])).map(player=>player.id);
+  if(game.setEligible.length) {
+    game.setStage='claim';
+    game.setClaims=[];
+    game.setClaimDecisions=[];
+  } else {
+    game.setStage='passing';
+  }
+}
+
+function renderSetClaim() {
+  const players=setPlayers();
+  const player=roomId
+    ? players.find(item=>item.id===playerId)
+    : players.find(item=>state.setEligible.includes(item.id)&&!state.setClaimDecisions.includes(item.id));
+  const canClaim=Boolean(player && state.setEligible.includes(player.id) && !state.setClaimDecisions.includes(player.id));
+  $('gameTitle').textContent='A SET is ready to claim';
+  $('gameSubtitle').textContent=roomId
+    ? 'If your four sheets match, claim now. Otherwise pass this claim window.'
+    : player?`Pass the device to ${player.name}. Their four sheets are checked privately.`:'All eligible players have decided.';
+  $('gameContent').innerHTML=player
+    ? `<div class="big-sheet"><div class="role">${matchingSet(state.setHands[player.id])?'SET!':'No SET'}</div><p>${safe(player.name)}${matchingSet(state.setHands[player.id])?' has four matching sheets.':' does not have four matching sheets.'}</p></div>`
+    : '<p class="note center">Waiting for players who found a SET to claim.</p>';
+  $('gameMessage').textContent=`${state.setClaims.length} SET claim(s) recorded.`;
+  $('gameActions').innerHTML='';
+  if(canClaim) {
+    button('Claim SET',()=>recordSetClaim(player.id),true);
+    button('Pass this claim',()=>passSetClaim(player.id));
+  }
+  if(roomId)button('Room Status',renderRoomLobby);
+  else if(!player)button('Leave Game',showHome);
+  screen('game');
+}
+
+function recordSetClaim(id) {
+  if(state.setStage!=='claim' || !state.setEligible.includes(id) ||
+     state.setClaimDecisions.includes(id) || !matchingSet(state.setHands[id]) ||
+     (roomId && id!==playerId))return;
+  updateSetClaimDecision(id,true);
+}
+
+function passSetClaim(id) {
+  if(state.setStage!=='claim' || !state.setEligible.includes(id) ||
+     state.setClaimDecisions.includes(id) || (roomId && id!==playerId))return;
+  updateSetClaimDecision(id,false);
+}
+
+function updateSetClaimDecision(id,claimed) {
+  const applyDecision=(game,players)=>{
+    if(game.game!=='SET'||game.setStage!=='claim'||!game.setEligible.includes(id)||
+       game.setClaimDecisions.includes(id))return;
+    if(claimed)game.setClaims.push(id);
+    game.setClaimDecisions.push(id);
+    if(game.setClaimDecisions.length!==game.setEligible.length)return;
+    if(!game.setClaims.length) {
+      game.setStage='passing';
+      game.setPassChoices={};
+      game.setEligible=[];
+      return;
+    }
+    game.roundPoints=Object.fromEntries(game.players.map(name=>[name,0]));
+    game.setClaims.forEach((claim,index)=>{
+      const player=players.find(item=>item.id===claim);
+      const points=SET_CATEGORY_POINTS[index]||0;
+      if(player) {
+        game.scores[player.name]=(game.scores[player.name]||0)+points;
+        game.roundPoints[player.name]=points;
+      }
+    });
+    game.roundFinished=true;
+    game.setStage='result';
+    game.roundLog.push(`SET round complete: ${game.setClaims.length} claim(s).`);
+  };
+  if(roomId) {
+    mutateRoomGame((game,current)=>{
+      applyDecision(game,current.players.map(player=>({id:player.id,name:player.name})));
+    });
+    room=activeRoom();
+  } else {
+    applyDecision(state,setPlayers());
+  }
+  if(state.roundFinished)finishRound();
+  else renderRoomSet();
+}
+
+/* KING, QUEEN, MINISTER MULTIPLAYER */
+function prepareKQM() {
+  const roles=shuffle(['King','Queen','Police','Thief',...Array.from({length:Math.max(0,state.players.length-4)},()=> 'Citizen')]);
+  state.kqmStage='reveal';
+  state.roleReady=[];
+  state.kingId=null;
+  state.guessId=null;
+  state.roundRoles={};
+  state.roundPoints={};
+  state.rolePoints={};
+  state.players.forEach(player=>state.rolePoints[player]=0);
+  if(roomId) {
+    room=activeRoom();
+    const assignedRoles=Object.fromEntries(room.players.map((player,index)=>[player.id,roles[index]]));
+    sessionStorage.setItem(roomRolesKey(),JSON.stringify(assignedRoles));
+    room.players.forEach((player,index)=>{
+      if(player.id===playerId) {
+        sessionStorage.setItem(roomRoleKey(),roles[index]);
+      } else {
+        const roleChannel=new BroadcastChannel(`${PRIVATE_ROLE_CHANNEL}-${roomId}-${player.id}`);
+        roleChannel.postMessage({roomId,gameId:state.gameId,round:state.round,role:roles[index]});
+        setTimeout(()=>roleChannel.close(),1000);
+      }
+    });
+  } else {
+    state.roles=roles;
+  }
+  renderRoleTurn();
+}
+
+function renderRoleTurn() {
+  if(roomId) {
+    const role=roomRole();
+    const alreadyReady=room?.game?.roleReady?.includes(playerId) || state.roleReady.includes(playerId);
+    $('gameTitle').textContent=alreadyReady?'Role Hidden':'Your Secret Role';
+    $('gameSubtitle').textContent=alreadyReady
+      ? 'Your role is hidden. Wait for the other players.'
+      : 'Your role is shown only in this tab. Do not share it before the Police guesses.';
+    $('gameContent').innerHTML=`<div class="big-sheet">
+      <div style="font-size:28px">✦ Your Secret Role ✦</div>
+      <div class="role">${safe(role || '…')}</div>
+      <p>${role ? 'Remember your role, then hide it when ready.' : 'Your private role is being sent to this tab.'}</p>
+    </div>`;
+    $('gameMessage').textContent=`${state.roleReady.length} of ${room.players.length} players are ready.`;
+    $('gameActions').innerHTML='';
+    if(role && !alreadyReady)button('Hide Role & I’m Ready',markRoomRoleReady,true);
+    button('Room Status',renderRoomLobby);
+    screen('game');
+    return;
+  }
+
+  const player=state.players[state.turn];
+  $('gameTitle').textContent='Pass the Device';
+  $('gameSubtitle').textContent=`Give the device to ${player}. Other players should look away.`;
+  $('gameContent').innerHTML=`<div class="big-sheet">
+    <div style="font-size:28px">✦ Secret Role ✦</div>
+    <div class="role">?</div>
+    <p>${safe(player)}, reveal only when you are ready.</p>
+  </div>`;
+  $('gameMessage').textContent='Keep your role secret until everyone has seen their own role.';
+  $('gameActions').innerHTML='';
+  button('Reveal My Role',revealRole,true);
+  button('Leave Game',showHome);
+}
+
+function revealRole() {
+  if(roomId)return;
+  const player=state.players[state.turn];
+  const role=state.roles[state.turn];
+  $('gameTitle').textContent='Your Secret Role';
+  $('gameSubtitle').textContent=`Only ${player} should look at this screen.`;
+  $('gameContent').innerHTML=`<div class="big-sheet">
+    <div style="font-size:25px">${safe(player)}</div>
+    <div class="role">${safe(role)}</div>
+    <div>Keep this role secret until the Police guesses.</div>
+  </div>`;
+  $('gameMessage').textContent='Remember your role. Hide it before passing the device to the next player.';
+  $('gameActions').innerHTML='';
+  button('Hide & Pass Device',hideAndPass,true);
+}
+
+function markRoomRoleReady() {
+  if(!roomId || !roomRole())return;
+  mutateRoomGame(game=>{
+    if(game.kqmStage!=='reveal' || game.roleReady.includes(playerId))return;
+    game.roleReady.push(playerId);
+  });
+  $('gameTitle').textContent='Role Hidden';
+  renderRoleTurn();
+  if(isRoomHost())advanceRoomKqmToGuess();
+}
+
+function advanceRoomKqmToGuess() {
+  if(!roomId || !isRoomHost())return;
+  const rooms=readRooms(),current=rooms[roomId];
+  if(!current?.game || current.game.kqmStage!=='reveal' ||
+     current.game.roleReady.length!==current.players.length)return;
+  const roles=JSON.parse(sessionStorage.getItem(roomRolesKey())||'{}');
+  const king=current.players.find(player=>roles[player.id]==='King');
+  if(!king) {
+    $('gameMessage').textContent='Could not find the King role for this round. Please restart the round.';
+    return;
+  }
+  current.game.kingId=king.id;
+  current.game.kqmStage='guess';
+  rooms[roomId]=current;
+  writeRooms(rooms);
+  room=current;
+  Object.assign(state,structuredClone(current.game));
+  announceRoom();
+  renderRoomGame();
+}
+
+function renderKqmGuess() {
+  const kingName=roomId
+    ? room.players.find(player=>player.id===state.kingId)?.name
+    : state.players[state.roles.indexOf('King')];
+  $('gameTitle').textContent='The King Reveals';
+  $('gameSubtitle').textContent=`${kingName} is the King. The King’s role is now public; all other roles stay secret.`;
+  if(roomId && roomRole()==='Police') {
+    const suspects=room.players.filter(player=>player.id!==state.kingId && player.id!==playerId);
+    $('gameContent').innerHTML=`<div class="big-sheet">
+      <div class="role">Find the Thief</div>
+      <p>You are the Police. Choose one player to accuse.</p>
+      ${suspects.map(player=>`<button onclick="submitKqmGuess('${safe(player.id)}')">${safe(player.name)}</button>`).join('')}
+    </div>`;
+    $('gameMessage').textContent='Only the Police can make a guess. Other roles remain hidden until the guess is made.';
+  } else if(roomId) {
+    $('gameContent').innerHTML='<div class="big-sheet"><div class="role">Police Investigation</div><p>The Police player is choosing a suspect. Other roles remain secret.</p></div>';
+    $('gameMessage').textContent='Wait for the Police to find the Thief.';
+  } else {
+    const policeIndex=state.roles.indexOf('Police');
+    const suspects=state.players.filter((player,index)=>index!==state.roles.indexOf('King')&&index!==policeIndex);
+    $('gameContent').innerHTML=`<div class="big-sheet">
+      <div class="role">Find the Thief</div>
+      <p>Pass the device to ${safe(state.players[policeIndex])}, the Police. Other players should look away.</p>
+      ${suspects.map(player=>`<button onclick="submitKqmGuess('${safe(player)}')">${safe(player)}</button>`).join('')}
+    </div>`;
+    $('gameMessage').textContent='The King is revealed. Keep Queen, Police and Thief roles hidden until the Police guesses.';
+  }
+  $('gameActions').innerHTML='';
+  if(roomId)button('Room Status',renderRoomLobby);
+  else button('Leave Game',showHome);
+  screen('game');
+}
+
+function scoreKqmRound(rolesByName,correct) {
+  const points={};
+  state.players.forEach(player=>{
+    const role=rolesByName[player];
+    points[player]=role==='King'?1000:role==='Queen'?800:
+      role==='Police'&&correct?500:role==='Thief'&&!correct?500:0;
+    state.scores[player]=(state.scores[player]||0)+points[player];
+  });
+  state.roundRoles=rolesByName;
+  state.roundPoints=points;
+  state.guessCorrect=correct;
+  state.roundFinished=true;
+  state.kqmStage='result';
+}
+
+function submitKqmGuess(target) {
+  if(roomId) {
+    if(roomRole()!=='Police')return;
+    const guess={type:'KQM_GUESS',roomId,guesserId:playerId,targetId:target};
+    if(isRoomHost())resolveRoomKqmGuess(guess);
+    else roomChannel.postMessage(guess);
+    $('gameMessage').textContent='Your guess has been submitted. Waiting for the round result…';
+    return;
+  }
+  const policeIndex=state.roles.indexOf('Police');
+  const targetIndex=state.players.indexOf(target);
+  if(targetIndex<0 || targetIndex===policeIndex || targetIndex===state.roles.indexOf('King'))return;
+  const rolesByName=Object.fromEntries(state.players.map((player,index)=>[player,state.roles[index]]));
+  const correct=state.roles[targetIndex]==='Thief';
+  state.guessId=target;
+  scoreKqmRound(rolesByName,correct);
+  state.roundLog.push(correct?'The Police found the Thief.':'The Thief was not found.');
+  finishRound();
+}
+
+function resolveRoomKqmGuess(data) {
+  if(!roomId || !isRoomHost())return;
+  const rooms=readRooms(),current=rooms[roomId];
+  if(!current?.game || current.game.kqmStage!=='guess')return;
+  const roles=JSON.parse(sessionStorage.getItem(roomRolesKey())||'{}');
+  if(roles[data.guesserId]!=='Police')return;
+  const target=current.players.find(player=>player.id===data.targetId);
+  if(!target || target.id===current.game.kingId || target.id===data.guesserId)return;
+  const correct=roles[target.id]==='Thief';
+  const rolesByName=Object.fromEntries(current.players.map(player=>[player.name,roles[player.id]]));
+  const points={};
+  current.players.forEach(player=>{
+    const role=roles[player.id];
+    points[player.name]=role==='King'?1000:role==='Queen'?800:
+      role==='Police'&&correct?500:role==='Thief'&&!correct?500:0;
+    current.game.scores[player.name]=(current.game.scores[player.name]||0)+points[player.name];
+  });
+  current.game.roundRoles=rolesByName;
+  current.game.roundPoints=points;
+  current.game.guessId=target.id;
+  current.game.guessCorrect=correct;
+  current.game.roundFinished=true;
+  current.game.kqmStage='result';
+  current.game.roundLog.push(correct?'The Police found the Thief.':'The Thief was not found.');
+  rooms[roomId]=current;
+  writeRooms(rooms);
+  room=current;
+  Object.assign(state,structuredClone(current.game));
+  announceRoom();
+  renderRoomGame();
+}
+
+function hideAndPass() {
+  if(roomId)return;
+  const player=state.players[state.turn];
+  state.roleReady.push(player);
+  state.turn++;
+  if(state.turn>=state.players.length) {
+    state.kingId=state.players[state.roles.indexOf('King')];
+    state.kqmStage='guess';
+    renderKqmGuess();
+  } else {
+    renderRoleTurn();
+  }
+}
+
+/* ROUNDS AND SCOREBOARD */
+function finishRound() {
+  if(!state.roundFinished)return;
+  if(state.round>=state.rounds) {
+    showScores();
+    return;
+  }
+  const rows=state.players.map(p=>
+    `<tr><td>${safe(p)}</td><td>${state.scores[p]}</td></tr>`).join('');
+  const roleRows=state.game==='KQM'
+    ? `<h3 class="center">Roles revealed</h3><table class="score-table"><thead><tr><th>Player</th><th>Role</th><th>Round points</th></tr></thead><tbody>${state.players.map(player=>`<tr><td>${safe(player)}</td><td>${safe(state.roundRoles[player]||'Unknown')}</td><td>${state.roundPoints[player]||0}</td></tr>`).join('')}</tbody></table><p class="center">${state.guessCorrect?'The Police found the Thief.':'The Thief was not found.'}</p>`
+    : '';
+  $('summaryTitle').textContent=`Round ${state.round} Complete!`;
+  $('summarySubtitle').textContent=`Next: Round ${state.round+1} of ${state.rounds}`;
+  $('summaryContent').innerHTML=`
+    ${roleRows}
+    <h3 class="center">Current Scores</h3>
+    <table class="score-table"><thead><tr><th>Player</th><th>Total points</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="note">The next round will use fresh cards or newly shuffled secret roles.</div>`;
+  $('continueButton').textContent=`Start Round ${state.round+1}`;
+  $('continueButton').disabled=roomId ? !isRoomHost() : false;
+  document.querySelector('#summary .danger').hidden = Boolean(roomId);
+  screen('summary');
+}
+
+function continueGame() {
+  if(roomId && !isRoomHost())return;
+  state.round++;
+  prepareRound();
+  if(roomId)saveRoomGame();
+  screen('game');
+}
+
+function showScores() {
+  const sorted=state.players.map(name=>({name,score:state.scores[name]}))
+    .sort((a,b)=>b.score-a.score);
+  $('scoreRows').innerHTML=sorted.map((p,i)=>
+    `<tr><td>${i+1}</td><td>${safe(p.name)}${i===0?' ★':''}</td><td>${p.score}</td></tr>`
+  ).join('');
+  $('winnerDisplay').innerHTML=(state.game==='KQM' && Object.keys(state.roundRoles).length)
+    ? `<div class="note"><b>Final round roles</b><p>${state.players.map(player=>`${safe(player)}: ${safe(state.roundRoles[player]||'Unknown')} (+${state.roundPoints[player]||0})`).join('<br>')}</p><p>${state.guessCorrect?'The Police found the Thief.':'The Thief was not found.'}</p></div>`
+    : '';
+  if(sorted.length && sorted.length>1 && sorted[0].score===sorted[1].score) {
+    $('winnerDisplay').innerHTML='<p class="winner" style="font-size:30px">It’s a tie!</p>';
+  } else if(sorted.length) {
+    $('winnerDisplay').innerHTML=`<p class="winner" style="font-size:32px">🏆 ${safe(sorted[0].name)} wins!</p>`;
+  }
+  const playAgainButton = document.querySelector('#scores .actions button');
+  if(roomId && !isRoomHost()) {
+    playAgainButton.textContent = 'Waiting for host';
+    playAgainButton.disabled = true;
+  } else {
+    playAgainButton.textContent = 'Play Again';
+    playAgainButton.disabled = false;
+  }
+  screen('scores');
+}
+
+function showHome() {
+  if (roomId) {
+    const current = activeRoom();
+    if (current?.status === 'playing' && state.roundFinished && state.round >= state.rounds && isRoomHost()) {
+      const rooms = readRooms();
+      rooms[roomId].status = 'lobby';
+      rooms[roomId].game = null;
+      writeRooms(rooms);
+      room = rooms[roomId];
+      announceRoom();
+      renderRoomLobby();
+    }
+    return;
+  }
+  screen('home');
+}
+
+roomChannel.onmessage = event => {
+  if (!roomId) {
+    renderOpenRooms();
+    return;
+  }
+  if (event.data?.roomId !== roomId) return;
+  if(event.data.type === 'KQM_GUESS') {
+    resolveRoomKqmGuess(event.data);
+    return;
+  }
+  if(isRoomHost())advanceRoomKqmToGuess();
+  room = activeRoom();
+  if (!room) {
+    roomId = null;
+    screen('home');
+  } else if (room.status === 'playing') {
+    renderRoomGame();
+  } else {
+    renderRoomLobby();
+  }
+};
+
+window.addEventListener('storage', event => {
+  if (event.key !== ROOM_KEY) return;
+  if (!roomId) {
+    renderOpenRooms();
+    return;
+  }
+  room = activeRoom();
+  if (!room) {
+    roomId = null;
+    screen('home');
+  } else if (room.status === 'playing') {
+    renderRoomGame();
+  } else {
+    renderRoomLobby();
+  }
+});
+
+function init() {
+  playerId = playerIdForTab();
+  roomId = sessionStorage.getItem('paperPartyRoomId');
+  if (!roomId) {
+    renderOpenRooms();
+    return;
+  }
+  room = activeRoom();
+  if (!room) {
+    roomId = null;
+    sessionStorage.removeItem('paperPartyRoomId');
+  } else {
+    connectPrivateRoleChannel();
+    if (room.status === 'playing') {
+      renderRoomGame();
+    } else {
+      renderRoomLobby();
+    }
+  }
+}
+
+init();
+</script>
+</body>
+</html>
